@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arclight Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #070b12; --elev: #0d1420; --card: #111a28; --hover: #162033;
+      --border: #1e2d42; --border2: #2a3f5c;
+      --text: #e8eef6; --muted: #8b9cb3; --dim: #5a6d85;
+      --accent: #f0a030; --ok: #3ecf8e; --bad: #e85d5d; --info: #5b9fd4;
+      --radius: 10px; --font: "DM Sans", system-ui, sans-serif; --mono: "JetBrains Mono", monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 13px; min-height: 100vh; }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    .login-wrap { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+    .login-card {
+      width: 100%; max-width: 360px; background: var(--elev); border: 1px solid var(--border2);
+      border-radius: 14px; padding: 28px;
+    }
+    .login-card h1 { font-size: 20px; margin-bottom: 6px; }
+    .login-card p { color: var(--muted); margin-bottom: 20px; }
+    .shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+    .side {
+      background: var(--elev); border-right: 1px solid var(--border);
+      padding: 16px 12px; position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    }
+    .side .brand { font-weight: 700; font-size: 15px; padding: 8px 10px 18px; color: var(--accent); }
+    .nav-btn {
+      width: 100%; text-align: left; border: none; background: transparent; color: var(--muted);
+      padding: 10px 12px; border-radius: 8px; cursor: pointer; margin-bottom: 2px; font-weight: 500;
+    }
+    .nav-btn:hover { background: var(--hover); color: var(--text); }
+    .nav-btn.active { background: rgba(240,160,48,0.12); color: var(--accent); }
+    .main { padding: 24px 28px 48px; max-width: 1200px; }
+    .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 12px; flex-wrap: wrap; }
+    .top h2 { font-size: 20px; font-weight: 700; }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 22px; }
+    @media (max-width: 800px) {
+      .shell { grid-template-columns: 1fr; }
+      .side { position: relative; height: auto; display: flex; flex-wrap: wrap; gap: 4px; }
+      .stats { grid-template-columns: 1fr 1fr; }
+    }
+    .stat {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px;
+    }
+    .stat .l { font-size: 10px; text-transform: uppercase; letter-spacing: .4px; color: var(--dim); margin-bottom: 6px; font-weight: 600; }
+    .stat .v { font-family: var(--mono); font-size: 20px; font-weight: 600; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 16px; }
+    .card-h { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); gap: 10px; flex-wrap: wrap; }
+    .card-h h3 { font-size: 13px; color: var(--muted); font-weight: 600; }
+    .card-b { padding: 14px 16px; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: var(--dim); font-size: 10px; text-transform: uppercase; letter-spacing: .4px; font-weight: 600; }
+    tr:last-child td { border-bottom: none; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 6px;
+      border: 1px solid transparent; font-weight: 600; font-size: 12px; cursor: pointer; white-space: nowrap;
+    }
+    .btn-primary { background: var(--accent); color: #0a0a0a; }
+    .btn-primary:hover { filter: brightness(1.05); }
+    .btn-ghost { background: transparent; border-color: var(--border2); color: var(--muted); }
+    .btn-ghost:hover { background: var(--hover); color: var(--text); }
+    .btn-ok { background: rgba(62,207,142,.12); border-color: rgba(62,207,142,.35); color: var(--ok); }
+    .btn-bad { background: rgba(232,93,93,.12); border-color: rgba(232,93,93,.35); color: var(--bad); }
+    .btn-sm { padding: 5px 9px; font-size: 11px; }
+    .field { margin-bottom: 12px; }
+    .field label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
+    .field input, .field select, .field textarea {
+      width: 100%; padding: 9px 11px; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 6px; outline: none;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
+    .field textarea { min-height: 72px; resize: vertical; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    @media (max-width: 600px) { .row2, .row3 { grid-template-columns: 1fr; } }
+    .overlay {
+      position: fixed; inset: 0; background: rgba(4,8,14,.72); display: flex; align-items: flex-start;
+      justify-content: center; padding: 40px 16px; z-index: 100; overflow-y: auto;
+    }
+    .modal {
+      background: var(--elev); border: 1px solid var(--border2); border-radius: 12px;
+      width: 100%; max-width: 520px; padding: 22px; position: relative;
+    }
+    .modal h3 { font-size: 16px; margin-bottom: 14px; }
+    .err { background: rgba(232,93,93,.1); border: 1px solid rgba(232,93,93,.3); color: var(--bad); padding: 8px 10px; border-radius: 6px; margin-bottom: 12px; font-size: 12px; }
+    .ok { background: rgba(62,207,142,.1); border: 1px solid rgba(62,207,142,.3); color: var(--ok); padding: 8px 10px; border-radius: 6px; margin-bottom: 12px; font-size: 12px; }
+    .badge {
+      display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .3px;
+    }
+    .badge.pending { background: rgba(240,160,48,.15); color: var(--accent); }
+    .badge.approved { background: rgba(62,207,142,.15); color: var(--ok); }
+    .badge.rejected { background: rgba(232,93,93,.15); color: var(--bad); }
+    .badge.active { background: rgba(62,207,142,.15); color: var(--ok); }
+    .badge.off { background: rgba(90,109,133,.2); color: var(--dim); }
+    .muted { color: var(--muted); }
+    .dim { color: var(--dim); }
+    .mono { font-family: var(--mono); }
+    .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .empty { padding: 20px 0; color: var(--dim); }
+    .toast {
+      position: fixed; bottom: 20px; right: 20px; background: var(--card); border: 1px solid var(--border2);
+      padding: 10px 14px; border-radius: 8px; z-index: 200; max-width: 320px; box-shadow: 0 8px 24px rgba(0,0,0,.4);
+    }
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const API = "https://script.google.com/macros/s/AKfycbzlSlYIt5LDNA8of_CvJqHaaUesr6ntPPgquS91guXUMb8_cCNZiVSOq_sH_pODCJ9z/exec";
+const TOKEN_KEY = "arclight_admin_token";
+
+async function api(action, data = {}) {
+  const params = new URLSearchParams({ action, ...flatten(data) });
+  const res = await fetch(API + "?" + params.toString(), { method: "GET", redirect: "follow" });
+  if (!res.ok) throw new Error("Network " + res.status);
+  return res.json();
+}
+function flatten(obj) {
+  const out = {};
+  Object.keys(obj || {}).forEach(k => {
+    const v = obj[k];
+    if (v === undefined || v === null) return;
+    out[k] = typeof v === "object" ? JSON.stringify(v) : String(v);
+  });
+  return out;
+}
+
+const state = {
+  token: localStorage.getItem(TOKEN_KEY) || "",
+  page: "dashboard",
+  stats: null,
+  users: [],
+  offers: [],
+  questions: [],
+  cashouts: [],
+  polls: [],
+  news: [],
+  codes: [],
+  ranks: [],
+  methods: [],
+  chat: [],
+  settings: {},
+  loading: false,
+  error: "",
+  modal: null,
+  toast: "",
+  cashoutFilter: "pending",
+  selectedOffer: "",
+};
+
+function toast(msg) {
+  state.toast = msg;
+  render();
+  setTimeout(() => { state.toast = ""; render(); }, 2800);
+}
+
+function authData(extra = {}) {
+  return { admin_token: state.token, ...extra };
+}
+
+async function loadPage() {
+  state.loading = true;
+  state.error = "";
+  render();
+  try {
+    const p = state.page;
+    if (p === "dashboard") {
+      const r = await api("adminStats", authData());
+      if (!r.ok) throw new Error(r.error || "Failed");
+      state.stats = r.stats;
+    } else if (p === "users") {
+      const r = await api("adminListUsers", authData());
+      if (!r.ok) throw new Error(r.error || "Failed");
+      state.users = r.users || [];
+    } else if (p === "offers") {
+      const r = await api("adminListOffers", authData());
+      if (!r.ok) throw new Error(r.error || "Failed");
+      state.offers = r.offers || [];
+    } else if (p === "questions") {
+      const r = await api("adminListQuestions", authData(state.selectedOffer ? { offer_id: state.selectedOffer } : {}));
+      if (!r.ok) throw new Error(r.error || "Failed");
+      state.questions = r.questions || [];
+      if (!state.offers.length) {
+        const o = await api("adminListOffers", authData());
+        if (o.ok) state.offers = o.offers || [];
+      }
+    } else if (p === "cashouts") {
+      const r = await api("adminListCashouts", authData(state.cashoutFilter ? { status: state.cashoutFilter } : {}));
+      if (!r.ok) throw new Error(r.error || "Failed");
+      state.cashouts = r.cashouts || [];
+    } else if (p === "polls") {
+      const r = await api("adminListPolls", authData());
+      if (!r.ok) throw new Error(r.error || "Failed");
+      state.polls = r.polls || [];
+    } else if (p === "news") {
+      const r = await api("adminListNews", authData());
+      if (!r.ok) throw new Error(r.error || "Failed");
+      state.news = r.news || [];
+    } else if (p === "codes") {
+      const r = await api("adminListCodes", authData());
+      if (!r.ok) throw new Error(r.error || "Failed");
+      state.codes = r.codes || [];
+    } else if (p === "ranks") {
+      const r = await api("adminListRanks", authData());
+      if (!r.ok) throw new Error(r.error || "Failed");
+      state.ranks = r.ranks || [];
+    } else if (p === "methods") {
+      const r = await api("adminListCashMethods", authData());
+      if (!r.ok) throw new Error(r.error || "Failed");
+      state.methods = r.methods || [];
+    } else if (p === "chat") {
+      const r = await api("adminListChat", authData({ limit: 100 }));
+      if (!r.ok) throw new Error(r.error || "Failed");
+      state.chat = r.messages || [];
+    } else if (p === "settings") {
+      const r = await api("adminGetSettings", authData());
+      if (!r.ok) throw new Error(r.error || "Failed");
+      state.settings = r.settings || {};
+    }
+  } catch (e) {
+    state.error = String(e.message || e);
+    if (/Unauthorized/i.test(state.error)) {
+      state.token = "";
+      localStorage.removeItem(TOKEN_KEY);
+    }
+  }
+  state.loading = false;
+  render();
+}
+
+function go(page) {
+  state.page = page;
+  state.modal = null;
+  loadPage();
+}
+
+async function login(password) {
+  state.loading = true;
+  state.error = "";
+  render();
+  try {
+    const r = await api("adminLogin", { password });
+    if (!r.ok) throw new Error(r.error || "Login failed");
+    state.token = r.admin_token;
+    localStorage.setItem(TOKEN_KEY, state.token);
+    state.page = "dashboard";
+    await loadPage();
+  } catch (e) {
+    state.error = String(e.message || e);
+    state.loading = false;
+    render();
+  }
+}
+
+function logout() {
+  state.token = "";
+  localStorage.removeItem(TOKEN_KEY);
+  state.error = "";
+  render();
+}
+
+function openModal(type, data = {}) {
+  state.modal = { type, data: { ...data } };
+  render();
+}
+function closeModal() {
+  state.modal = null;
+  render();
+}
+
+async function saveModal() {
+  const m = state.modal;
+  if (!m) return;
+  try {
+    let r;
+    if (m.type === "user") r = await api("adminUpdateUser", authData(m.data));
+    else if (m.type === "offer") r = await api("adminSaveOffer", authData(m.data));
+    else if (m.type === "question") {
+      const opts = String(m.data.options_text || "").split("\n").map(s => s.trim()).filter(Boolean);
+      r = await api("adminSaveQuestion", authData({
+        id: m.data.id,
+        offer_id: m.data.offer_id,
+        question: m.data.question,
+        options: opts,
+        correct_index: Number(m.data.correct_index) || 0,
+        order: Number(m.data.order) || 1
+      }));
+    }
+    else if (m.type === "poll") {
+      const opts = String(m.data.options_text || "").split("\n").map(s => s.trim()).filter(Boolean);
+      r = await api("adminSavePoll", authData({
+        id: m.data.id,
+        question: m.data.question,
+        options: opts,
+        reward: Number(m.data.reward) || 1,
+        active: m.data.active !== false && m.data.active !== "false"
+      }));
+    }
+    else if (m.type === "news") r = await api("adminSaveNews", authData(m.data));
+    else if (m.type === "code") r = await api("adminSaveCode", authData(m.data));
+    else if (m.type === "rank") {
+      const perks = String(m.data.perks_text || "").split("\n").map(s => s.trim()).filter(Boolean);
+      r = await api("adminSaveRank", authData({
+        rank: m.data.rank,
+        earnings: m.data.earnings,
+        referrals: m.data.referrals,
+        rewards: m.data.rewards,
+        perks
+      }));
+    }
+    else if (m.type === "method") r = await api("adminSaveCashMethod", authData({
+      id: m.data.id,
+      name: m.data.name,
+      min_points: m.data.min_points,
+      icon: m.data.icon,
+      active: m.data.active !== false && m.data.active !== "false",
+      sort_order: m.data.sort_order
+    }));
+    else if (m.type === "setting") r = await api("adminSetSetting", authData({ key: m.data.key, value: m.data.value }));
+    else return;
+
+    if (!r.ok) throw new Error(r.error || "Save failed");
+    toast("Saved");
+    closeModal();
+    loadPage();
+  } catch (e) {
+    state.error = String(e.message || e);
+    render();
+  }
+}
+
+async function delItem(kind, id) {
+  if (!confirm("Delete this item?")) return;
+  try {
+    let r;
+    if (kind === "offer") r = await api("adminDeleteOffer", authData({ id }));
+    else if (kind === "question") r = await api("adminDeleteQuestion", authData({ id }));
+    else if (kind === "news") r = await api("adminDeleteNews", authData({ id }));
+    else if (kind === "method") r = await api("adminDeleteCashMethod", authData({ id }));
+    else if (kind === "chat") r = await api("adminDeleteChat", authData({ id }));
+    if (!r.ok) throw new Error(r.error || "Delete failed");
+    toast("Deleted");
+    loadPage();
+  } catch (e) {
+    toast(String(e.message || e));
+  }
+}
+
+async function processCashout(id, decision) {
+  if (!confirm(decision === "approve" ? "Approve this cashout?" : "Reject and refund?")) return;
+  try {
+    const r = await api("adminProcessCashout", authData({ cashout_id: id, decision }));
+    if (!r.ok) throw new Error(r.error || "Failed");
+    toast(decision === "approve" ? "Approved" : "Rejected + refunded");
+    loadPage();
+  } catch (e) {
+    toast(String(e.message || e));
+  }
+}
+
+function el(html) {
+  const t = document.createElement("template");
+  t.innerHTML = html.trim();
+  return t.content.firstChild;
+}
+
+function renderLogin() {
+  const root = document.getElementById("app");
+  root.innerHTML = "";
+  const wrap = el(`<div class="login-wrap"><div class="login-card">
+    <h1>Arclight Admin</h1>
+    <p>Manage users, offers, cashouts, and cash methods.</p>
+    <div id="login-err"></div>
+    <div class="field"><label>Admin password</label><input type="password" id="pw" placeholder="admin123" /></div>
+    <button class="btn btn-primary" id="login-btn" style="width:100%">Sign in</button>
+  </div></div>`);
+  root.appendChild(wrap);
+  if (state.error) {
+    document.getElementById("login-err").innerHTML = `<div class="err">${esc(state.error)}</div>`;
+  }
+  document.getElementById("login-btn").onclick = () => login(document.getElementById("pw").value);
+  document.getElementById("pw").onkeydown = (e) => { if (e.key === "Enter") login(e.target.value); };
+}
+
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+
+function render() {
+  if (!state.token) return renderLogin();
+  const root = document.getElementById("app");
+  const nav = [
+    ["dashboard", "Dashboard"],
+    ["users", "Users"],
+    ["offers", "Offers"],
+    ["questions", "Quiz questions"],
+    ["cashouts", "Cashouts"],
+    ["methods", "Cash methods"],
+    ["polls", "Polls"],
+    ["news", "News"],
+    ["codes", "Promo codes"],
+    ["ranks", "Ranks"],
+    ["chat", "Chat"],
+    ["settings", "Settings"],
+  ];
+
+  let body = "";
+  if (state.loading) body = `<div class="empty">Loading…</div>`;
+  else if (state.error && state.page) body = `<div class="err">${esc(state.error)}</div>` + pageBody();
+  else body = pageBody();
+
+  root.innerHTML = `
+    <div class="shell">
+      <aside class="side">
+        <div class="brand">Arclight Admin</div>
+        ${nav.map(([id, label]) => `<button class="nav-btn ${state.page===id?"active":""}" data-page="${id}">${label}</button>`).join("")}
+        <button class="nav-btn" id="logout" style="margin-top:12px;color:var(--bad)">Sign out</button>
+      </aside>
+      <main class="main">
+        <div class="top"><h2>${esc(nav.find(n => n[0]===state.page)?.[1] || "")}</h2>
+          <button class="btn btn-ghost btn-sm" id="refresh">Refresh</button>
+        </div>
+        ${body}
+      </main>
+    </div>
+    ${state.modal ? modalHtml() : ""}
+    ${state.toast ? `<div class="toast">${esc(state.toast)}</div>` : ""}
+  `;
+
+  root.querySelectorAll("[data-page]").forEach(b => b.onclick = () => go(b.dataset.page));
+  document.getElementById("logout").onclick = logout;
+  document.getElementById("refresh").onclick = () => loadPage();
+  bindPageActions();
+  if (state.modal) bindModal();
+}
+
+function pageBody() {
+  switch (state.page) {
+    case "dashboard": return dashHtml();
+    case "users": return usersHtml();
+    case "offers": return offersHtml();
+    case "questions": return questionsHtml();
+    case "cashouts": return cashoutsHtml();
+    case "methods": return methodsHtml();
+    case "polls": return pollsHtml();
+    case "news": return newsHtml();
+    case "codes": return codesHtml();
+    case "ranks": return ranksHtml();
+    case "chat": return chatHtml();
+    case "settings": return settingsHtml();
+    default: return "";
+  }
+}
+
+function dashHtml() {
+  const s = state.stats || {};
+  return `<div class="stats">
+    <div class="stat"><div class="l">Users</div><div class="v">${s.users ?? "—"}</div></div>
+    <div class="stat"><div class="l">Offers</div><div class="v">${s.offers ?? "—"}</div></div>
+    <div class="stat"><div class="l">Pending cashouts</div><div class="v" style="color:var(--accent)">${s.pending_cashouts ?? "—"}</div></div>
+    <div class="stat"><div class="l">Total balances</div><div class="v mono">${s.total_user_balance ?? "—"}</div></div>
+  </div>
+  <div class="card"><div class="card-b muted">Use the sidebar to manage offers, quiz questions, cash methods, approvals, and more. Changes write directly to your Google Sheet.</div></div>`;
+}
+
+function usersHtml() {
+  return `<div class="card"><div class="card-b"><table>
+    <thead><tr><th>User</th><th>Balance</th><th>Hold</th><th>Rank</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      ${state.users.map(u => `<tr>
+        <td><strong>${esc(u.username)}</strong><div class="dim">${esc(u.email)}</div></td>
+        <td class="mono">${u.balance}</td>
+        <td class="mono">${u.on_hold}</td>
+        <td>${esc(u.rank)}</td>
+        <td>${esc(u.status)}</td>
+        <td><button class="btn btn-ghost btn-sm" data-edit-user='${esc(JSON.stringify(u))}'>Edit</button></td>
+      </tr>`).join("") || `<tr><td colspan="6" class="empty">No users</td></tr>`}
+    </tbody>
+  </table></div></div>`;
+}
+
+function offersHtml() {
+  return `<div class="card">
+    <div class="card-h"><h3>All offers</h3><button class="btn btn-primary btn-sm" id="new-offer">+ New offer</button></div>
+    <div class="card-b"><table>
+      <thead><tr><th>Name</th><th>PTS</th><th>Pass%</th><th>Tries</th><th>Active</th><th></th></tr></thead>
+      <tbody>
+        ${state.offers.map(o => `<tr>
+          <td><strong>${esc(o.name)}</strong><div class="dim">${esc(o.id)}</div></td>
+          <td class="mono">${o.points}</td>
+          <td>${o.pass_percent}%</td>
+          <td>${o.max_tries}</td>
+          <td><span class="badge ${o.active?"active":"off"}">${o.active?"on":"off"}</span></td>
+          <td class="actions">
+            <button class="btn btn-ghost btn-sm" data-edit-offer='${esc(JSON.stringify(o))}'>Edit</button>
+            <button class="btn btn-bad btn-sm" data-del-offer="${esc(o.id)}">Del</button>
+          </td>
+        </tr>`).join("")}
+      </tbody>
+    </table></div>
+  </div>`;
+}
+
+function questionsHtml() {
+  return `<div class="filters">
+    <select id="offer-filter" style="padding:7px 10px;background:var(--card);border:1px solid var(--border);border-radius:6px">
+      <option value="">All offers</option>
+      ${state.offers.map(o => `<option value="${esc(o.id)}" ${state.selectedOffer===o.id?"selected":""}>${esc(o.name)}</option>`).join("")}
+    </select>
+    <button class="btn btn-primary btn-sm" id="new-q">+ Question</button>
+  </div>
+  <div class="card"><div class="card-b"><table>
+    <thead><tr><th>Offer</th><th>Question</th><th>Correct #</th><th></th></tr></thead>
+    <tbody>
+      ${state.questions.map(q => `<tr>
+        <td class="dim">${esc(q.offer_id)}</td>
+        <td>${esc(q.question)}</td>
+        <td>${q.correct_index}</td>
+        <td class="actions">
+          <button class="btn btn-ghost btn-sm" data-edit-q='${esc(JSON.stringify({...q, options_text: (q.options||[]).join("\\n")}))}'>Edit</button>
+          <button class="btn btn-bad btn-sm" data-del-q="${esc(q.id)}">Del</button>
+        </td>
+      </tr>`).join("") || `<tr><td colspan="4" class="empty">No questions</td></tr>`}
+    </tbody>
+  </table></div></div>`;
+}
+
+function cashoutsHtml() {
+  return `<div class="filters">
+    ${["pending","approved","rejected",""].map(s => `<button class="btn ${state.cashoutFilter===s?"btn-primary":"btn-ghost"} btn-sm" data-cf="${s}">${s||"all"}</button>`).join("")}
+  </div>
+  <div class="card"><div class="card-b"><table>
+    <thead><tr><th>User</th><th>Method</th><th>PTS</th><th>Status</th><th>When</th><th></th></tr></thead>
+    <tbody>
+      ${state.cashouts.map(c => `<tr>
+        <td>${esc(c.username)}</td>
+        <td>${esc(c.method)}</td>
+        <td class="mono">${c.points}</td>
+        <td><span class="badge ${esc(c.status)}">${esc(c.status)}</span></td>
+        <td class="dim">${esc(String(c.created_at||"").slice(0,16))}</td>
+        <td class="actions">${c.status==="pending" ? `
+          <button class="btn btn-ok btn-sm" data-co-ok="${esc(c.id)}">Approve</button>
+          <button class="btn btn-bad btn-sm" data-co-no="${esc(c.id)}">Reject</button>` : ""}
+        </td>
+      </tr>`).join("") || `<tr><td colspan="6" class="empty">No cashouts</td></tr>`}
+    </tbody>
+  </table></div></div>`;
+}
+
+function methodsHtml() {
+  return `<div class="card">
+    <div class="card-h"><h3>Cashout methods (shown in user Vault)</h3>
+      <button class="btn btn-primary btn-sm" id="new-method">+ Method</button>
+    </div>
+    <div class="card-b"><table>
+      <thead><tr><th>ID / Name</th><th>Min PTS</th><th>Icon</th><th>Order</th><th>Active</th><th></th></tr></thead>
+      <tbody>
+        ${state.methods.map(m => `<tr>
+          <td><strong>${esc(m.name)}</strong><div class="dim">${esc(m.id)}</div></td>
+          <td class="mono">${m.min_points}</td>
+          <td>${esc(m.icon)}</td>
+          <td>${m.sort_order}</td>
+          <td><span class="badge ${m.active?"active":"off"}">${m.active?"on":"off"}</span></td>
+          <td class="actions">
+            <button class="btn btn-ghost btn-sm" data-edit-method='${esc(JSON.stringify(m))}'>Edit</button>
+            <button class="btn btn-bad btn-sm" data-del-method="${esc(m.id)}">Del</button>
+          </td>
+        </tr>`).join("") || `<tr><td colspan="6" class="empty">None yet — run setupAdmin_() first</td></tr>`}
+      </tbody>
+    </table></div>
+  </div>`;
+}
+
+function pollsHtml() {
+  return `<div class="card">
+    <div class="card-h"><h3>Polls</h3><button class="btn btn-primary btn-sm" id="new-poll">+ Poll</button></div>
+    <div class="card-b"><table>
+      <thead><tr><th>Question</th><th>Reward</th><th>Active</th><th></th></tr></thead>
+      <tbody>
+        ${state.polls.map(p => `<tr>
+          <td>${esc(p.question)}</td>
+          <td>${p.reward} PTS</td>
+          <td><span class="badge ${p.active?"active":"off"}">${p.active?"on":"off"}</span></td>
+          <td><button class="btn btn-ghost btn-sm" data-edit-poll='${esc(JSON.stringify({...p, options_text:(p.options||[]).join("\\n")}))}'>Edit</button></td>
+        </tr>`).join("")}
+      </tbody>
+    </table></div>
+  </div>`;
+}
+
+function newsHtml() {
+  return `<div class="card">
+    <div class="card-h"><h3>News</h3><button class="btn btn-primary btn-sm" id="new-news">+ News</button></div>
+    <div class="card-b"><table>
+      <thead><tr><th>Title</th><th>Body</th><th></th></tr></thead>
+      <tbody>
+        ${state.news.map(n => `<tr>
+          <td><strong>${esc(n.title)}</strong></td>
+          <td class="muted">${esc(n.body||"")}</td>
+          <td class="actions">
+            <button class="btn btn-ghost btn-sm" data-edit-news='${esc(JSON.stringify(n))}'>Edit</button>
+            <button class="btn btn-bad btn-sm" data-del-news="${esc(n.id)}">Del</button>
+          </td>
+        </tr>`).join("")}
+      </tbody>
+    </table></div>
+  </div>`;
+}
+
+function codesHtml() {
+  return `<div class="card">
+    <div class="card-h"><h3>Promo codes</h3><button class="btn btn-primary btn-sm" id="new-code">+ Code</button></div>
+    <div class="card-b"><table>
+      <thead><tr><th>Code</th><th>PTS</th><th>Uses</th><th>Active</th><th></th></tr></thead>
+      <tbody>
+        ${state.codes.map(c => `<tr>
+          <td class="mono"><strong>${esc(c.code)}</strong></td>
+          <td>${c.points}</td>
+          <td>${c.uses}/${c.max_uses}</td>
+          <td><span class="badge ${c.active?"active":"off"}">${c.active?"on":"off"}</span></td>
+          <td><button class="btn btn-ghost btn-sm" data-edit-code='${esc(JSON.stringify(c))}'>Edit</button></td>
+        </tr>`).join("")}
+      </tbody>
+    </table></div>
+  </div>`;
+}
+
+function ranksHtml() {
+  return `<div class="card">
+    <div class="card-h"><h3>Ranks</h3><button class="btn btn-primary btn-sm" id="new-rank">+ Rank</button></div>
+    <div class="card-b"><table>
+      <thead><tr><th>Rank</th><th>Earnings</th><th>Refs</th><th>Perks</th><th></th></tr></thead>
+      <tbody>
+        ${state.ranks.map(r => `<tr>
+          <td><strong>${esc(r.rank)}</strong></td>
+          <td class="mono">${r.earnings}</td>
+          <td>${r.referrals}</td>
+          <td class="muted">${esc((r.perks||[]).join(", "))}</td>
+          <td><button class="btn btn-ghost btn-sm" data-edit-rank='${esc(JSON.stringify({...r, perks_text:(r.perks||[]).join("\\n")}))}'>Edit</button></td>
+        </tr>`).join("")}
+      </tbody>
+    </table></div>
+  </div>`;
+}
+
+function chatHtml() {
+  return `<div class="card"><div class="card-b"><table>
+    <thead><tr><th>User</th><th>Message</th><th></th></tr></thead>
+    <tbody>
+      ${state.chat.map(m => `<tr>
+        <td>${esc(m.username)}${m.badge?` <span class="badge active">${esc(m.badge)}</span>`:""}</td>
+        <td class="${m.deleted?"dim":""}">${m.deleted?"[deleted]":esc(m.message)}</td>
+        <td>${!m.deleted?`<button class="btn btn-bad btn-sm" data-del-chat="${esc(m.id)}">Delete</button>`:""}</td>
+      </tr>`).join("") || `<tr><td colspan="3" class="empty">No messages</td></tr>`}
+    </tbody>
+  </table></div></div>`;
+}
+
+function settingsHtml() {
+  const s = state.settings;
+  return `<div class="card"><div class="card-b">
+    <div class="row2">
+      <div class="field"><label>Site name</label><input id="set-site" value="${esc(s.site_name||"")}" /></div>
+      <div class="field"><label>Min cashout (fallback)</label><input id="set-min" value="${esc(s.min_cashout||"300")}" /></div>
+    </div>
+    <div class="field"><label>New admin password</label><input id="set-pw" type="password" placeholder="Leave blank to keep" /></div>
+    <button class="btn btn-primary" id="save-settings">Save settings</button>
+  </div></div>`;
+}
+
+function modalHtml() {
+  const m = state.modal;
+  const d = m.data;
+  let fields = "";
+  if (m.type === "user") {
+    fields = `
+      <div class="field"><label>Username</label><input disabled value="${esc(d.username)}" /></div>
+      <div class="row2">
+        <div class="field"><label>Balance</label><input data-k="balance" value="${esc(d.balance)}" /></div>
+        <div class="field"><label>On hold</label><input data-k="on_hold" value="${esc(d.on_hold)}" /></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Rank</label><input data-k="rank" value="${esc(d.rank)}" /></div>
+        <div class="field"><label>Status</label><input data-k="status" value="${esc(d.status)}" /></div>
+      </div>
+      <div class="field"><label>Email</label><input data-k="email" value="${esc(d.email)}" /></div>`;
+  } else if (m.type === "offer") {
+    fields = `
+      <div class="field"><label>Name</label><input data-k="name" value="${esc(d.name||"")}" /></div>
+      <div class="field"><label>Description</label><textarea data-k="description">${esc(d.description||"")}</textarea></div>
+      <div class="row3">
+        <div class="field"><label>Points</label><input data-k="points" value="${esc(d.points??50)}" /></div>
+        <div class="field"><label>Pass %</label><input data-k="pass_percent" value="${esc(d.pass_percent??70)}" /></div>
+        <div class="field"><label>Max tries</label><input data-k="max_tries" value="${esc(d.max_tries??3)}" /></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Daily limit</label><input data-k="daily_limit" value="${esc(d.daily_limit??0)}" /></div>
+        <div class="field"><label>Active</label>
+          <select data-k="active"><option value="true" ${d.active!==false?"selected":""}>Yes</option><option value="false" ${d.active===false?"selected":""}>No</option></select>
+        </div>
+      </div>`;
+  } else if (m.type === "question") {
+    fields = `
+      <div class="field"><label>Offer ID</label>
+        <select data-k="offer_id">${state.offers.map(o=>`<option value="${esc(o.id)}" ${d.offer_id===o.id?"selected":""}>${esc(o.name)}</option>`).join("")}</select>
+      </div>
+      <div class="field"><label>Question</label><input data-k="question" value="${esc(d.question||"")}" /></div>
+      <div class="field"><label>Options (one per line)</label><textarea data-k="options_text">${esc(d.options_text||"")}</textarea></div>
+      <div class="row2">
+        <div class="field"><label>Correct index (0-based)</label><input data-k="correct_index" value="${esc(d.correct_index??0)}" /></div>
+        <div class="field"><label>Order</label><input data-k="order" value="${esc(d.order??1)}" /></div>
+      </div>`;
+  } else if (m.type === "poll") {
+    fields = `
+      <div class="field"><label>Question</label><input data-k="question" value="${esc(d.question||"")}" /></div>
+      <div class="field"><label>Options (one per line)</label><textarea data-k="options_text">${esc(d.options_text||"")}</textarea></div>
+      <div class="row2">
+        <div class="field"><label>Reward PTS</label><input data-k="reward" value="${esc(d.reward??1)}" /></div>
+        <div class="field"><label>Active</label>
+          <select data-k="active"><option value="true" ${d.active!==false?"selected":""}>Yes</option><option value="false" ${d.active===false?"selected":""}>No</option></select>
+        </div>
+      </div>`;
+  } else if (m.type === "news") {
+    fields = `
+      <div class="field"><label>Title</label><input data-k="title" value="${esc(d.title||"")}" /></div>
+      <div class="field"><label>Body</label><textarea data-k="body">${esc(d.body||"")}</textarea></div>`;
+  } else if (m.type === "code") {
+    fields = `
+      <div class="field"><label>Code</label><input data-k="code" value="${esc(d.code||"")}" /></div>
+      <div class="row2">
+        <div class="field"><label>Points</label><input data-k="points" value="${esc(d.points??50)}" /></div>
+        <div class="field"><label>Max uses</label><input data-k="max_uses" value="${esc(d.max_uses??100)}" /></div>
+      </div>
+      <div class="field"><label>Active</label>
+        <select data-k="active"><option value="true" ${d.active!==false?"selected":""}>Yes</option><option value="false" ${d.active===false?"selected":""}>No</option></select>
+      </div>`;
+  } else if (m.type === "rank") {
+    fields = `
+      <div class="field"><label>Rank name</label><input data-k="rank" value="${esc(d.rank||"")}" /></div>
+      <div class="row3">
+        <div class="field"><label>Earnings</label><input data-k="earnings" value="${esc(d.earnings??0)}" /></div>
+        <div class="field"><label>Referrals</label><input data-k="referrals" value="${esc(d.referrals??0)}" /></div>
+        <div class="field"><label>Rewards</label><input data-k="rewards" value="${esc(d.rewards??0)}" /></div>
+      </div>
+      <div class="field"><label>Perks (one per line)</label><textarea data-k="perks_text">${esc(d.perks_text||"")}</textarea></div>`;
+  } else if (m.type === "method") {
+    fields = `
+      <div class="field"><label>ID (unique key)</label><input data-k="id" value="${esc(d.id||"")}" ${d.id?"disabled":""} /></div>
+      <div class="field"><label>Display name</label><input data-k="name" value="${esc(d.name||"")}" /></div>
+      <div class="row3">
+        <div class="field"><label>Min PTS</label><input data-k="min_points" value="${esc(d.min_points??300)}" /></div>
+        <div class="field"><label>Icon</label><input data-k="icon" value="${esc(d.icon||"")}" /></div>
+        <div class="field"><label>Sort order</label><input data-k="sort_order" value="${esc(d.sort_order??0)}" /></div>
+      </div>
+      <div class="field"><label>Active</label>
+        <select data-k="active"><option value="true" ${d.active!==false?"selected":""}>Yes</option><option value="false" ${d.active===false?"selected":""}>No</option></select>
+      </div>`;
+  }
+
+  return `<div class="overlay" id="modal-bg"><div class="modal">
+    <h3>${esc(m.type)} ${d.id || d.username || "new"}</h3>
+    ${state.error ? `<div class="err">${esc(state.error)}</div>` : ""}
+    ${fields}
+    <div class="actions" style="margin-top:8px">
+      <button class="btn btn-primary" id="modal-save">Save</button>
+      <button class="btn btn-ghost" id="modal-cancel">Cancel</button>
+    </div>
+  </div></div>`;
+}
+
+function bindPageActions() {
+  document.querySelectorAll("[data-edit-user]").forEach(b => b.onclick = () => openModal("user", { ...JSON.parse(b.getAttribute("data-edit-user")), user_id: JSON.parse(b.getAttribute("data-edit-user")).id }));
+  document.querySelectorAll("[data-edit-offer]").forEach(b => b.onclick = () => openModal("offer", JSON.parse(b.getAttribute("data-edit-offer"))));
+  document.querySelectorAll("[data-del-offer]").forEach(b => b.onclick = () => delItem("offer", b.dataset.delOffer));
+  document.getElementById("new-offer")?.addEventListener("click", () => openModal("offer", { active: true, points: 50, pass_percent: 70, max_tries: 3 }));
+  document.getElementById("offer-filter")?.addEventListener("change", (e) => { state.selectedOffer = e.target.value; loadPage(); });
+  document.getElementById("new-q")?.addEventListener("click", () => openModal("question", { offer_id: state.selectedOffer || state.offers[0]?.id, options_text: "Option A\nOption B\nOption C\nOption D", correct_index: 0, order: 1 }));
+  document.querySelectorAll("[data-edit-q]").forEach(b => b.onclick = () => openModal("question", JSON.parse(b.getAttribute("data-edit-q"))));
+  document.querySelectorAll("[data-del-q]").forEach(b => b.onclick = () => delItem("question", b.dataset.delQ));
+  document.querySelectorAll("[data-cf]").forEach(b => b.onclick = () => { state.cashoutFilter = b.dataset.cf; loadPage(); });
+  document.querySelectorAll("[data-co-ok]").forEach(b => b.onclick = () => processCashout(b.dataset.coOk, "approve"));
+  document.querySelectorAll("[data-co-no]").forEach(b => b.onclick = () => processCashout(b.dataset.coNo, "reject"));
+  document.getElementById("new-method")?.addEventListener("click", () => openModal("method", { min_points: 300, active: true, sort_order: 0 }));
+  document.querySelectorAll("[data-edit-method]").forEach(b => b.onclick = () => openModal("method", JSON.parse(b.getAttribute("data-edit-method"))));
+  document.querySelectorAll("[data-del-method]").forEach(b => b.onclick = () => delItem("method", b.dataset.delMethod));
+  document.getElementById("new-poll")?.addEventListener("click", () => openModal("poll", { reward: 1, active: true, options_text: "Yes\nNo" }));
+  document.querySelectorAll("[data-edit-poll]").forEach(b => b.onclick = () => openModal("poll", JSON.parse(b.getAttribute("data-edit-poll"))));
+  document.getElementById("new-news")?.addEventListener("click", () => openModal("news", {}));
+  document.querySelectorAll("[data-edit-news]").forEach(b => b.onclick = () => openModal("news", JSON.parse(b.getAttribute("data-edit-news"))));
+  document.querySelectorAll("[data-del-news]").forEach(b => b.onclick = () => delItem("news", b.dataset.delNews));
+  document.getElementById("new-code")?.addEventListener("click", () => openModal("code", { points: 50, max_uses: 100, active: true }));
+  document.querySelectorAll("[data-edit-code]").forEach(b => b.onclick = () => openModal("code", JSON.parse(b.getAttribute("data-edit-code"))));
+  document.getElementById("new-rank")?.addEventListener("click", () => openModal("rank", {}));
+  document.querySelectorAll("[data-edit-rank]").forEach(b => b.onclick = () => openModal("rank", JSON.parse(b.getAttribute("data-edit-rank"))));
+  document.querySelectorAll("[data-del-chat]").forEach(b => b.onclick = () => delItem("chat", b.dataset.delChat));
+  document.getElementById("save-settings")?.addEventListener("click", async () => {
+    try {
+      await api("adminSetSetting", authData({ key: "site_name", value: document.getElementById("set-site").value }));
+      await api("adminSetSetting", authData({ key: "min_cashout", value: document.getElementById("set-min").value }));
+      const pw = document.getElementById("set-pw").value;
+      if (pw) {
+        const r = await api("adminSetSetting", authData({ key: "admin_password", value: pw }));
+        if (!r.ok) throw new Error(r.error);
+        toast("Password changed — login again");
+        logout();
+        return;
+      }
+      toast("Settings saved");
+      loadPage();
+    } catch (e) { toast(String(e.message || e)); }
+  });
+}
+
+function bindModal() {
+  document.getElementById("modal-cancel").onclick = closeModal;
+  document.getElementById("modal-bg").onclick = (e) => { if (e.target.id === "modal-bg") closeModal(); };
+  document.getElementById("modal-save").onclick = () => {
+    state.modal.data = state.modal.data || {};
+    document.querySelectorAll(".modal [data-k]").forEach(el => {
+      state.modal.data[el.getAttribute("data-k")] = el.value;
+    });
+    // preserve id/user_id
+    saveModal();
+  };
+}
+
+// boot
+if (state.token) loadPage();
+else render();
+</script>
+</body>
+</html>
